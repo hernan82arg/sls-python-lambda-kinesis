@@ -1,0 +1,62 @@
+service: hd-prj
+
+frameworkVersion: '3'
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
+  datadog:
+    apiKey: 
+
+provider:
+  name: aws
+  runtime: python3.8
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - kinesis:PutRecord
+            - kinesis:PutRecords
+          Resource:
+            - Fn::GetAtt: [ kinesisStream, Arn ]
+  stackTags:
+    service: hd-prj
+    owner: hernan
+  # Enables X-Ray on all our functions
+  tracing:
+    lambda: true
+
+resources:
+  Resources:
+    kinesisStream:
+      Type: AWS::Kinesis::Stream
+      Properties:
+        Name: hdStream
+        RetentionPeriodHours: 24
+        ShardCount: 1
+
+functions:
+  pusher:
+    handler: src/pusher/handler.main
+    events:
+      - httpApi:
+          path: /
+          method: get        
+  reader:
+    handler: src/reader/handler.main
+    events:
+      - stream:
+          type: kinesis
+          consumer: true
+          arn:
+            Fn::GetAtt: [ kinesisStream, Arn ]
+          batchWindow: 60
+          batchSize: 100
+          startingPosition: LATEST
+          parallelizationFactor: 1
+          maximumRetryAttempts: 10
+
+plugins:
+  - serverless-python-requirements
+  - serverless-plugin-datadog
