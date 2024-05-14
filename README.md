@@ -2,6 +2,20 @@
 
 ## Usage
 
+### SLS Installation
+
+In a terminal run:
+
+```
+asdf plugin add serverless https://github.com/pdemagny/asdf-serverless.git
+```
+and then
+```
+asdf install
+```
+
+NOTE: make sure you have your AWS credentials properly configured and permissions to create resources in AWS
+
 ### Deployment
 
 In order to deploy the example, you need to run the following command:
